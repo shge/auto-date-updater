@@ -13,6 +13,8 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 function adu_update_date() {
+	remove_filter( 'content_save_pre', 'wp_filter_post_kses' );  // Prevent auto formatting
+
 	$date_format       = 'Y-m-d H:i:s';
 	$date1             = strtotime( "-14 hour");
 	$date2             = strtotime( "-8 hour");
@@ -32,6 +34,8 @@ function adu_update_date() {
 		wp_update_post( $update );
 
 	}
+
+	add_filter( 'content_save_pre', 'wp_filter_post_kses' );  // Enable auto formatting again for unknown users
 }
 
 function adu_set_post_modified( $data ) {
