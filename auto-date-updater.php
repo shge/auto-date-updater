@@ -1,8 +1,8 @@
 <?php
 /*
 Plugin Name: Auto Date Updater
-Description: Update published / modified dates of all posts regularly. (Requires WP-Cron)
-Version:     0.1
+Description: 公開済みのすべての記事の投稿日時と更新日時を前日の11:00〜17:00にランダムで分散させます。処理は毎日深夜1:00に実行されます。停止するにはプラグインを無効にしてください。
+Version:     1.0
 Author:      Soga Shigemura
 */
 
@@ -10,13 +10,35 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
+function adu_activation() {
+    // Schedules a recurring event.
+    $run_timestamp = strtotime("16:00:00");  // 1:00 am JST
+    if($run_timestamp < time()) {
+        $run_timestamp = strtotime("+1 day", $run_timestamp);
+    }
+    wp_schedule_event($run_timestamp, 'daily', 'adu_update_date_hook');
+}
+function adu_deactivation() {
+    // Unschedules all events attached to the hook with the specified arguments.
+    wp_clear_scheduled_hook('adu_update_date_hook');
+}
+register_activation_hook(__FILE__, 'adu_activation');
+register_deactivation_hook(__FILE__, 'adu_deactivation');
+
+add_action( 'adu_update_date_hook', 'adu_update_date' );
+
+
 function adu_update_date() {
 
     global $wpdb;
 
     $date_format       = 'Y-m-d H:i:s';
-    $date1             = strtotime( "-14 hour");
-    $date2             = strtotime( "-8 hour");
+    $date1             = strtotime("2:00:00");  // 11:00 am JST
+    $date2             = strtotime("8:00:00");  // 5:00 pm = 17:00 JST
+    if($date2 > time()) {
+        $date1 = strtotime("-1 day", $date1);
+        $date2 = strtotime("-1 day", $date2);
+    }
 
     $posts = get_posts( [ 'numberposts' => -1, 'post_status' => 'publish', 'post_type' => 'post' ] );
 
